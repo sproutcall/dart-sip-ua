@@ -303,6 +303,10 @@ class SIPUAHelper extends EventManager {
     });
     handlers.on(EventCallEnded(), (EventCallEnded event) {
       logger.d('call ended with cause: ${event.cause}');
+      Call? call = _calls[event.id];
+      if (call != null) {
+        call._stopAllTracks();
+      }
       _notifyCallStateListeners(
           event,
           CallState(CallStateEnum.ENDED,
@@ -571,31 +575,41 @@ class Call {
 
   void hangup([Map<String, dynamic>? options]) {
     assert(_session != null, 'ERROR(hangup): rtc session is invalid!');
-    if (peerConnection != null) {
-      for (MediaStream? stream in peerConnection!.getLocalStreams()) {
-        if (stream == null) return;
-        logger.d(
-            'Stopping local stream with tracks: ${stream.getTracks().length}');
-        for (MediaStreamTrack track in stream.getTracks()) {
-          logger.d('Stopping track: ${track.kind}${track.id} ');
-          track.stop();
+
+    _stopAllTracks(); // fire-and-forget
+
+    if (state == CallStateEnum.ENDED) return;
+    _session.terminate(options);
+  }
+
+  Future<void> _stopAllTracks() async {
+    RTCPeerConnection? pc = peerConnection;
+    if (pc != null) {
+      try {
+        List<RTCRtpSender> senders = await pc.getSenders();
+        for (RTCRtpSender sender in senders) {
+          MediaStreamTrack? track = sender.track;
+          if (track != null) {
+            logger.d('Stopping sender track: ${track.kind} ${track.id}');
+            track.stop();
+          }
         }
-      }
-      for (MediaStream? stream in peerConnection!.getRemoteStreams()) {
-        if (stream == null) return;
-        logger.d(
-            'Stopping remote stream with tracks: ${stream.getTracks().length}');
-        for (MediaStreamTrack track in stream.getTracks()) {
-          logger.d('Stopping track: ${track.kind}${track.id} ');
-          track.stop();
+
+        List<RTCRtpReceiver> receivers = await pc.getReceivers();
+        for (RTCRtpReceiver receiver in receivers) {
+          MediaStreamTrack? track = receiver.track;
+          if (track != null) {
+            logger.d('Stopping receiver track: ${track.kind} ${track.id}');
+            track.stop();
+          }
         }
+      } catch (e, st) {
+        // Don't let cleanup failure prevent SIP termination
+        logger.w('Failed to stop tracks in hangup: $e\n$st');
       }
     } else {
       logger.d("peerConnection is null, can't stop tracks.");
     }
-
-    if (state == CallStateEnum.ENDED) return;
-    _session.terminate(options);
   }
 
   void hold() {
