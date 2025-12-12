@@ -295,6 +295,8 @@ class SIPUAHelper extends EventManager {
     });
     handlers.on(EventCallFailed(), (EventCallFailed event) {
       logger.d('call failed with cause: ${event.cause}');
+      Call? call = _calls[event.id];
+      call?._stopAllTracks();
       _notifyCallStateListeners(
           event,
           CallState(CallStateEnum.FAILED,
@@ -304,9 +306,7 @@ class SIPUAHelper extends EventManager {
     handlers.on(EventCallEnded(), (EventCallEnded event) {
       logger.d('call ended with cause: ${event.cause}');
       Call? call = _calls[event.id];
-      if (call != null) {
-        call._stopAllTracks();
-      }
+      call?._stopAllTracks();
       _notifyCallStateListeners(
           event,
           CallState(CallStateEnum.ENDED,
