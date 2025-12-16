@@ -1185,8 +1185,8 @@ class RTCSession extends EventManager implements Owner {
 
     bool? upgradeToVideo;
     try {
-      upgradeToVideo = (options['mediaConstraints']?['video'] != false ||
-              options['mediaConstraints']?['mandatory']?['video'] != null) &&
+      upgradeToVideo = (options['mediaConstraints']?['video'] == true ||
+              options['mediaConstraints']?['mandatory']?['video'] == true) &&
           rtcOfferConstraints?['offerToReceiveVideo'] == null;
     } catch (e) {
       logger.w('Failed to determine upgrade to video: $e');
