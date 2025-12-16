@@ -26,7 +26,7 @@ class StackTraceNJ implements core.StackTrace {
   /// Returns a File instance for the current stackframe
   ///
   File get sourceFile {
-    return frames![0].sourceFile;
+    return frames[0].sourceFile;
   }
 
   ///
@@ -43,7 +43,7 @@ class StackTraceNJ implements core.StackTrace {
   /// Returns the filename for the current stackframe
   ///
   int get lineNo {
-    return frames![0].lineNo;
+    return frames[0].lineNo;
   }
 
   /// Outputs a formatted string of the current stack_trace_nj
@@ -54,7 +54,7 @@ class StackTraceNJ implements core.StackTrace {
     List<String> formatted = <String>[];
     int count = 0;
 
-    for (Stackframe stackFrame in frames!) {
+    for (Stackframe stackFrame in frames) {
       // if (stackFrame.sourceFile.contains('log.dart') ||
       //     stackFrame.sourceFile.contains('package:logger')) {
       //   continue;
@@ -85,14 +85,14 @@ class StackTraceNJ implements core.StackTrace {
     }
   }
 
-  List<Stackframe>? get frames {
+  List<Stackframe> get frames {
     _frames ??= _extractFrames();
-    return _frames;
+    return _frames!;
   }
 
   @override
   String toString() {
-    return formatStackTrace()!;
+    return formatStackTrace() ?? stackTrace.toString();
   }
 
   List<Stackframe> _extractFrames() {
